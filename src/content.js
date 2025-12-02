@@ -173,16 +173,34 @@ function generateReply() {
 
             const apiKey = await chrome.storage.local.get(['gemini-api-key']);
             const gptQuery = await chrome.storage.local.get(['gpt-query']);
-
             const model = await chrome.storage.local.get(['gemini-model']);
-            console.log(`Using model: ${model['gemini-model']}`)
+
+            // Check if API key exists
+            if (!apiKey['gemini-api-key'] || apiKey['gemini-api-key'].trim() === '') {
+                hideLoadingSpinner(content);
+                const errorMessage = "Please configure your Gemini API key in the extension settings first.";
+                let p = document.createElement("p");
+                p.innerHTML = errorMessage;
+                p.style.marginBottom = '5px';
+                p.style.marginTop = '5px';
+                p.style.color = 'red';
+                p.style.fontWeight = 'bold';
+                div.appendChild(p);
+                shadowRoot.appendChild(div);
+                content.appendChild(shadowRoot);
+                return;
+            }
+
+            const trimmedApiKey = apiKey['gemini-api-key'].trim();
+            const selectedModel = model['gemini-model'] || 'gemini-1.5-flash';
+            console.log(`Using model: ${selectedModel}`);
 
             // Prepare the prompt for Gemini
             const systemPrompt = gptQuery['gpt-query'] || "You are a ghostwriter and reply to the user's tweets by talking directly to the person, you must keep it short, exclude hashtags.";
             const userMessage = '[username] wrote [tweet]'.replace('[username]', username).replace('[tweet]', content.innerText);
             const fullPrompt = `${systemPrompt}\n\n${userMessage}`;
 
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model['gemini-model'] || 'gemini-2.0-flash-exp'}:generateContent?key=${apiKey['gemini-api-key']}`, {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${trimmedApiKey}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -202,12 +220,24 @@ function generateReply() {
             })
 
             if (!response.ok) {
-                // creates a modal error over twitter content
-                const errorMessage = "Error while generating a reply for this tweet: " + (await response.json()).error.message;
+                hideLoadingSpinner(content);
+                let errorMessage = "Error while generating a reply for this tweet";
+                try {
+                    const errorData = await response.json();
+                    if (errorData.error && errorData.error.message) {
+                        errorMessage += ": " + errorData.error.message;
+                    } else {
+                        errorMessage += ": " + response.statusText;
+                    }
+                } catch (e) {
+                    errorMessage += ": " + response.statusText;
+                }
+                
                 let p = document.createElement("p");
                 p.innerHTML = errorMessage;
                 p.style.marginBottom = '5px';
                 p.style.marginTop = '5px';
+                p.style.color = 'red';
                 div.appendChild(p);
 
                 // Create the button
@@ -219,7 +249,7 @@ function generateReply() {
                 button.style.marginTop = "10px";
                 // Add a click event handler to open the GitHub issue URL
                 button.addEventListener("click", function() {
-                    window.open(`https://github.com/marcolivierbouch/XReplyGPT/issues/new?title=Issue%20while%20generating%20tweet&body=${errorMessage}`);
+                    window.open(`https://github.com/marcolivierbouch/XReplyGPT/issues/new?title=Issue%20while%20generating%20tweet&body=${encodeURIComponent(errorMessage)}`);
                 });
 
                 div.appendChild(button);
@@ -277,7 +307,7 @@ function generateReply() {
                   user: userHandle,
                   to_user: username,
                   prompt: gptQuery['gpt-query'] || "default prompt",
-                  gpt_model: model['gemini-model'] || 'gemini-2.0-flash-exp',
+                  gpt_model: selectedModel,
                   tweet_content: content.innerText.substring(0, 500),  // Limit to 500 chars
                   reply_generated: generatedText.substring(0, 280),    // Twitter limit
                   client_version: '6.2',  // Extension version

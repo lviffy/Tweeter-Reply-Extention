@@ -12,39 +12,39 @@ function getGeminiModels(apiKey) {
 }
 
 function validateApiKey() {
-  const apiKey = document.getElementById('api-key').value;
+  const apiKey = document.getElementById('api-key').value.trim();
   const apiKeyInput = document.getElementById('api-key');
   const validateButton = document.getElementById('validate-button');
   const selectModels = document.getElementById('models-select');
   const gptQueryInput = document.getElementById('gpt-query');
 
-  // Test the Gemini API key with a simple request
-  fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      contents: [{
-        parts: [{
-          text: "Hello"
-        }]
-      }]
-    })
-  })
+  if (!apiKey) {
+    apiKeyInput.style.borderColor = 'red';
+    gptQueryInput.disabled = true;
+    selectModels.disabled = true;
+    validateButton.classList.add('invalid');
+    console.warn('API key is empty');
+    return;
+  }
+
+  // Test the Gemini API key by listing models
+  fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`)
   .then((response) => {
       if (!response.ok) {
-          apiKeyInput.style.borderColor = 'red';
-          gptQueryInput.disabled = true;
-          selectModels.disabled = true;
-          validateButton.classList.add('invalid');
-      } else {
-          apiKeyInput.style.borderColor = 'green';
-          gptQueryInput.disabled = false;
-          selectModels.disabled = false;
-          loadAndPopulateModels()
-          validateButton.classList.remove('invalid');
+          return response.json().then(err => {
+            console.error('API validation failed:', err);
+            throw new Error(err.error?.message || 'Invalid API key');
+          });
       }
+      return response.json();
+  })
+  .then((data) => {
+      apiKeyInput.style.borderColor = 'green';
+      gptQueryInput.disabled = false;
+      selectModels.disabled = false;
+      loadAndPopulateModels();
+      validateButton.classList.remove('invalid');
+      console.log('API key validated successfully');
   })
   .catch((error) => {
       console.error('Error occurred during API key validation:', error);
@@ -67,7 +67,7 @@ function loadAndPopulateModels() {
 
             // Add default option
             chrome.storage.local.get(['gemini-model']).then((model) => {
-                const savedModel = model['gemini-model'] || 'gemini-pro';
+                const savedModel = model['gemini-model'] || 'gemini-1.5-flash';
                 
                 // Add all models
                 response.models.forEach(modelInfo => {
@@ -89,7 +89,7 @@ function loadAndPopulateModels() {
 document.addEventListener('DOMContentLoaded', function () {
   // API key save
   document.getElementById('api-key').addEventListener('change', function () {
-    const value = document.getElementById('api-key').value;
+    const value = document.getElementById('api-key').value.trim();
     chrome.storage.local.set({ 'gemini-api-key': value }).then(() => {
       console.log("New API key saved");
     });
@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   chrome.storage.local.get(['gemini-api-key']).then((result) => {
-    if (result['gemini-api-key'] == undefined) {
+    if (result['gemini-api-key'] == undefined || result['gemini-api-key'].trim() === '') {
       document.getElementById('api-key').value = "";
       document.getElementById('validate-button').classList.add('invalid');
 
@@ -152,28 +152,16 @@ document.addEventListener('DOMContentLoaded', function () {
       gptQueryInput.disabled = true;
       selectModels.disabled = true;
     } else {
-      document.getElementById('api-key').value = result['gemini-api-key'];
+      document.getElementById('api-key').value = result['gemini-api-key'].trim();
       validateApiKey();
     }
   });
 
   chrome.storage.local.get(['gemini-model']).then((result) => {
     if (result['gemini-model'] == undefined) {
-      chrome.storage.local.set({ 'gemini-model': 'gemini-2.0-flash-exp' })
-      const modelSelect = document.getElementById('models-select');
-      const defaultOption = document.createElement('option');
-      defaultOption.value = 'gemini-2.0-flash-exp';
-      defaultOption.text = 'Gemini 2.0 Flash (Experimental)';
-      defaultOption.selected = true;
-      modelSelect.appendChild(defaultOption);
-    } else {
-      const modelSelect = document.getElementById('models-select');
-      const defaultOption = document.createElement('option');
-      defaultOption.value = result['gemini-model'];
-      defaultOption.text = result['gemini-model'];
-      defaultOption.selected = true;
-      modelSelect.appendChild(defaultOption);
+      chrome.storage.local.set({ 'gemini-model': 'gemini-1.5-flash' });
     }
+    // Model dropdown will be populated by loadAndPopulateModels() after API validation
   });
 
   chrome.storage.local.get(['automatic-window-close']).then((result) => {
