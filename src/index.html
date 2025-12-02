@@ -1,203 +1,433 @@
 <html>
 
 <head>
-  <link href="https://unpkg.com/tailwindcss@^1.0/dist/tailwind.min.css" rel="stylesheet">
-
   <script type="text/javascript" src="popup.js"></script>
   <style>
-    html {
-      height: 200px;
-      width: 500px;
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
 
-    .header-2 a:hover svg {
-      stroke: #ff9a00;
-      animation: wiggle 0.5s infinite;
+    html, body {
+      height: 600px;
+      width: 400px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #000000;
+      color: #e7e9ea;
+      overflow-y: auto;
     }
 
-    @keyframes wiggle {
-      0% {
-        transform: rotateZ(0deg);
-      }
-
-      25% {
-        transform: rotateZ(-5deg);
-      }
-
-      50% {
-        transform: rotateZ(5deg);
-      }
-
-      75% {
-        transform: rotateZ(-5deg);
-      }
-
-      100% {
-        transform: rotateZ(0deg);
-      }
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 10px;
     }
 
-    #validate-button {
-      height: 38px; /* Adjust as needed */
+    ::-webkit-scrollbar-track {
+      background: transparent;
     }
 
-    @keyframes breathing {
-      0%, 100% {
-          transform: scale(1);
-      }
-      50% {
-          transform: scale(1.05);
-      }
+    ::-webkit-scrollbar-thumb {
+      background: #333639;
+      border-radius: 5px;
+      border: 2px solid #000000; /* Creates padding effect */
     }
 
-    /* Apply the breathing animation to the button */
-    #validate-button.invalid {
-        animation: breathing 1.5s infinite;
+    ::-webkit-scrollbar-thumb:hover {
+      background: #536471;
+    }
+
+    /* Header */
+    .header {
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(12px);
+      padding: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid #2f3336;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo-section {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-section img {
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+    }
+
+    .logo-text {
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .review-link {
+      color: #fff;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border: 1px solid #536471;
+      border-radius: 9999px;
+      transition: background-color 0.2s;
+    }
+
+    .review-link:hover {
+      background-color: #16181c;
+    }
+
+    .icon-button {
+      background: transparent;
+      border: none;
+      color: #71767b;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s;
+    }
+
+    .icon-button:hover {
+      color: #e7e9ea;
+    }
+
+    .icon-button.active {
+      color: #e7e9ea;
+    }
+
+    .icon-button.active svg path {
+      fill: currentColor;
+    }
+
+    .icon-button.active svg circle {
+      fill: #000000;
+    }
+
+    .icon-button svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: currentColor;
+    }
+
+    /* Content */
+    .content {
+      padding: 20px;
+    }
+
+    .section {
+      margin-bottom: 32px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      color: #fff;
+    }
+
+    /* Minimal Steps */
+    .steps {
+      font-size: 13px;
+      color: #71767b;
+      line-height: 1.5;
+      margin-bottom: 16px;
+      background: #16181c;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #2f3336;
+    }
+    
+    .steps p {
+      margin-bottom: 4px;
+    }
+    
+    .steps p:last-child {
+      margin-bottom: 0;
+    }
+    
+    .steps a {
+      color: #1d9bf0;
+      text-decoration: none;
+    }
+    
+    .steps a:hover {
+      text-decoration: underline;
+    }
+
+    /* Inputs */
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    .label {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: block;
+      color: #71767b;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    input[type="password"],
+    input[type="text"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 14px;
+      background: #000;
+      border: 1px solid #333639;
+      border-radius: 8px;
+      font-size: 15px;
+      color: #fff;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    input:hover, select:hover, textarea:hover {
+      border-color: #536471;
+    }
+
+    select {
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23e7e9ea%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px top 50%;
+      background-size: 12px auto;
+      padding-right: 40px;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #1d9bf0;
+    }
+
+    /* Buttons */
+    .validate-button {
+      background-color: #fff;
+      color: #000;
+      border: none;
+      border-radius: 9999px;
+      font-size: 15px;
+      font-weight: 700;
+      padding: 0 24px;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      white-space: nowrap;
+    }
+
+    .validate-button:hover {
+      opacity: 0.9;
+      transform: scale(1.02);
+    }
+    
+    .validate-button.invalid {
+        background-color: #f4212e;
+        color: #fff;
+    }
+
+    /* Checkbox */
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 16px;
+      cursor: pointer;
+      padding: 4px 0;
+      user-select: none;
+    }
+
+    input[type="checkbox"] {
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border: 2px solid #536471;
+      border-radius: 4px;
+      background: transparent;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    input[type="checkbox"]:checked {
+      background: #1d9bf0;
+      border-color: #1d9bf0;
+    }
+
+    input[type="checkbox"]:checked::after {
+      content: '';
+      position: absolute;
+      left: 5px;
+      top: 1px;
+      width: 4px;
+      height: 10px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+
+    input[type="checkbox"]:hover {
+      border-color: #e7e9ea;
+    }
+
+    .checkbox-row label {
+      font-size: 14px;
+      color: #e7e9ea;
+      cursor: pointer;
+    }
+
+    /* Shortcuts */
+    .shortcuts-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .edit-btn {
+      background: transparent;
+      color: #1d9bf0;
+      border: none;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .edit-btn:hover {
+      text-decoration: underline;
+    }
+
+    .shortcut-list {
+      list-style: none;
     }
 
     .shortcut {
-      border-radius: 4px;
-      padding: 4px 8px;
-      margin: 4px 0;
-    }
-    
-    .shortcut-key {
-      background-color: #888;
-      color: white;
-      border-radius: 3px;
-      padding: 0 4px;
-      margin-right: 4px;
+      padding: 10px 0;
+      border-bottom: 1px solid #2f3336;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      color: #e7e9ea;
     }
 
+    .shortcut-key {
+      background: #202327;
+      color: #e7e9ea;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-right: 10px;
+      border: 1px solid #333639;
+    }
+
+    /* Footer */
+    .footer {
+      padding: 20px;
+      border-top: 1px solid #2f3336;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .footer a {
+      color: #71767b;
+      text-decoration: none;
+      font-size: 12px;
+    }
+
+    .footer a:hover {
+      color: #fff;
+    }
   </style>
   <meta charset="UTF-8">
-  </meta>
 </head>
 
-<div class="header-2 mr-6">
-  <nav class="bg-white py-2 md:py-4">
-    <div class="container px-4 mx-auto">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center">
-          <image height="70" width="70" src="./images/XReplyGPT.png"></image>
-          <a href="#" class="font-bold text-xl text-blue-700 ml-2">
-            XReplyGPT
-          </a>
-        </div>
-        <a href="https://chrome.google.com/webstore/detail/xreplygpt/ajjgpcaiofpdenhkmabcadabajmimpdk/reviews" target="_blank"
-          class="p-2 lg:px-4 md:mx-2 text-gray-800 rounded border-2 border-blue-400 hover:border-blue-600 flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
-            <polygon
-              points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
-            </polygon>
-          </svg>
-          Leave a review
-        </a>
-      </div>
+<body>
+  <div class="header">
+    <div class="logo-section">
+      <img src="./images/XReplyGPT.png" alt="Logo">
+      <span class="logo-text">XReplyGPT</span>
     </div>
-  </nav>
-</div>
-
-<div class="ml-6 mr-6 py-2 md:py-2">
-  <div class="mb-8 container px-4 mx-auto">
-    <h1 class="flex items-center text-xl font-extrabold dark:text-white">How it works? 👨‍🏫</h1>
-    <div class="relative flex items-center">
-      <div class="flex-grow border-t border-gray-400"></div>
-    </div>
-    <p class="text-gray-700">1. Create a Google Gemini API key <a href="https://aistudio.google.com/app/apikey"
-        target="_blank" class="underline">here</a>. It's free to use!</p>
-    <p class="text-gray-700">2. Save it in the config section. </p>
-    <p class="text-gray-700">3. Open <a class="underline" href="https://x.com" target="_blank">https://x.com</a>.</p>
-    <p class="text-gray-700">4. Press the shortcut "Generate reply for tweets".</p>
-    <p class="text-gray-700">5. Click on the generated reply to send it.</p>
-  </div>
-
-  <div class="mb-6 container px-4 mx-auto">
-    <h1 class="flex items-center text-xl font-extrabold dark:text-white">Config ⚙️</h1>
-    <div class="mb-2 relative flex items-center">
-      <div class="flex-grow border-t border-gray-400"></div>
-    </div>
-    <div class="max-w-2xl mb-4 mx-auto">
-        <div class="flex items-center">
-          <input class="border-2 w-full h-10 pl-2 rounded" type="password" id="api-key"
-              placeholder="Google Gemini API key">
-          <button id="validate-button" class="bg-blue-500 hover:bg-blue-700 text-white font-bold px-4 rounded ml-2">
-              Validate
-          </button>
-        </div>
-        <div class="flex items-center">
-          <input id="show-api-key" type="checkbox" value=""
-              class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
-          <label for="show-api-key" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Show API
-              key</label>
-        </div>
-    </div>
-
-    <div class="mb-4">
-      <p class="text-gray-700">Gemini model:</p>
-      <select id="models-select" class="border-2 border-gray-300 text-sm rounded focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-      </select>
-    </div>
-
-    <p class="text-gray-700">AI prompt:</p>
-    <div class="max-w-2xl flex mx-auto">
-      <textarea id="gpt-query" class="p-2 mr-1 w-full rounded border-2 border-gray-300 focus:border-gray-500" rows="4"
-        cols="24"></textarea>
-    </div>
-  </div>
-
-  <div class="mr-6 py-2 md:py-2">
-    <div class="mb-8 container px-4 mx-auto">
-      <h1 class="flex items-center text-xl font-extrabold dark:text-white">Features ✨</h1>
-      <div class="relative flex items-center">
-        <div class="flex-grow border-t border-gray-400"></div>
-      </div>
-      <div class="mt-2 flex items-center">
-        <input id="window-close" checked type="checkbox" value=""
-          class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
-        <label for="window-close" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Automatic window close after
-          reply</lable>
-      </div>
-    </div>
-  </div>
-
-  <div class="mb-8 container px-4 mx-auto">
-  <div class="flex items-start justify-between mb-1"> <!-- Change items-center to items-start to align title to the left -->
-    <h1 class="text-xl font-extrabold dark:text-white">Shortcuts ⌨️</h1> <!-- Removed unnecessary flex class from the title -->
-    <button id="extension-shortcuts-button" class="py-2 bg-blue-500 hover:bg-blue-700 text-white font-bold px-4 rounded ml-2">
-      Edit shortcuts
+    <button id="settings-toggle" class="icon-button" aria-label="Settings">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings-icon lucide-settings"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
     </button>
   </div>
 
-    <div class="mb-2 relative flex items-center">
-      <div class="flex-grow border-t border-gray-400"></div>
+  <div class="content">
+    <div class="section">
+      <div class="input-group">
+        <label class="label">Reply Persona</label>
+        <textarea id="gpt-query" placeholder="You are a helpful assistant..."></textarea>
+      </div>
     </div>
-    <ul  id="shortcut-container" class="ml-4 list-disc">
-    </ul>
+
+    <div id="settings-panel" class="section" style="display: none;">
+      <h2 class="section-title">Configuration</h2>
+      
+      <div class="steps">
+        <p>1. Get API Key <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a></p>
+        <p>2. Paste & Save below</p>
+      </div>
+
+      <div class="input-group">
+        <div class="input-row">
+          <input type="password" id="api-key" placeholder="Gemini API Key">
+          <button id="validate-button" class="validate-button">Save</button>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="label">Model</label>
+        <select id="models-select"></select>
+      </div>
+
+      <div class="checkbox-row">
+        <input id="window-close" type="checkbox" checked>
+        <label for="window-close">Auto-close window</label>
+      </div>
+      
+      <div class="checkbox-row">
+        <input id="show-api-key" type="checkbox">
+        <label for="show-api-key">Show Key</label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="shortcuts-header">
+        <h2 class="section-title">Shortcuts</h2>
+        <button id="extension-shortcuts-button" class="edit-btn">Edit</button>
+      </div>
+      <ul id="shortcut-container" class="shortcut-list"></ul>
+    </div>
   </div>
 
-  <div class="mb-4 container px-4 mx-auto">
-    <h1 class="flex items-center text-xl font-extrabold dark:text-white">AI prompt examples 💬</h1>
-    <div class="mb-2 relative flex items-center">
-      <div class="flex-grow border-t border-gray-400"></div>
-    </div>
-    <ul class="ml-4 list-disc">
-      <li>You are against everything, argue with every tweet.</li>
-      <li>You are a ghostwriter and reply to the user's tweets by talking directly to the person, you must keep it
-        short, exclude hashtags.</li>
-      <li>Reply to tweet, add value to what they are saying, add one typo and it must feel like a real person. Exclude hashtag.</li>
-    </ul>
+  <div class="footer">
+    <a href="https://github.com/marcolivierbouch/XReplyGPT" target="_blank">GitHub</a>
+    <a href="https://chrome.google.com/webstore/detail/xreplygpt/ajjgpcaiofpdenhkmabcadabajmimpdk/support" target="_blank">Support</a>
   </div>
-</div>
-
-<div class="mt-4 ml-6 w-full pb-4 pr-10 text-sm text-left fade-in">
-  <a class="text-gray-500 no-underline hover:no-underline" href="#">&copy; XReplyGPT 2023</a>
-  <a class="text-gray-500 float-right px-4" target="_blank"
-    href="https://github.com/marcolivierbouch/XReplyGPT">Github</a>
-  <a class="text-gray-500 float-right" target="_blank" href="changelog.html">Changelog</a>
-  <a class="text-gray-500 float-right px-4" target="_blank" href="https://marcolivierbouch.github.io/XReplyGPT/">Website</a>
-  <a class="text-gray-500 float-right" target="_blank" href="https://chrome.google.com/webstore/detail/xreplygpt/ajjgpcaiofpdenhkmabcadabajmimpdk/support">Support</a>
-</div>
+</body>
 
 </html>

@@ -146,6 +146,10 @@ document.addEventListener('DOMContentLoaded', function () {
     if (result['gemini-api-key'] == undefined || result['gemini-api-key'].trim() === '') {
       document.getElementById('api-key').value = "";
       document.getElementById('validate-button').classList.add('invalid');
+      
+      // Show settings if API key is missing
+      document.getElementById('settings-panel').style.display = 'block';
+      document.getElementById('settings-toggle').classList.add('active');
 
       const selectModels = document.getElementById('models-select');
       const gptQueryInput = document.getElementById('gpt-query');
@@ -195,5 +199,18 @@ document.addEventListener('DOMContentLoaded', function () {
   const extensionShortcutsButton = document.getElementById("extension-shortcuts-button");
   extensionShortcutsButton.addEventListener("click", function () {
     chrome.tabs.create({url: "chrome://extensions/shortcuts"});
+  });
+
+  // Settings toggle
+  const settingsToggle = document.getElementById('settings-toggle');
+  const settingsPanel = document.getElementById('settings-panel');
+  
+  settingsToggle.addEventListener('click', function() {
+    settingsToggle.classList.toggle('active');
+    if (settingsPanel.style.display === 'none') {
+      settingsPanel.style.display = 'block';
+    } else {
+      settingsPanel.style.display = 'none';
+    }
   });
 }); 
