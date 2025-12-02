@@ -4,7 +4,7 @@
   "name": "XReplyGPT",
   "description": "The fastest way to reply to tweets using ChatGPT and the easiest way to boost your tweet impressions.",
   "icons": {
-    "128": "src/images/XReplyGPT.png"
+    "128": "src/images/logo.png"
   },
   "background": {
     "service_worker": "src/service-worker.js",
@@ -58,6 +58,6 @@
   ],
   "action": {
     "default_popup": "src/index.html",
-    "default_icon": "src/images/XReplyGPTbg.png"
+    "default_icon": "src/images/logo.png"
   }
 }
