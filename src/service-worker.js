@@ -49,5 +49,8 @@ chrome.runtime.setUninstallURL(
 )
 
 chrome.runtime.onInstalled.addListener(function (details) {
-  chrome.tabs.create({ url: 'https://xreplygpt.com/welcome.html' });
+  if (details.reason === 'install') {
+    chrome.tabs.create({ url: chrome.runtime.getURL('src/onboarding.html') });
+  }
 });
+
