@@ -6,7 +6,7 @@ chrome.commands.onCommand.addListener((command) => {
     chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
       chrome.scripting.executeScript({
         target: { tabId: tabs[0].id },
-        files: ['src/content.js'],
+        files: ['src/config.js', 'src/content.js'],
       });
     });
   } else if (command === "move_to_next_button") {

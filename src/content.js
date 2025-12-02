@@ -254,10 +254,14 @@ function generateReply() {
             // Real Supabase cloud analytics for project nvcsefnmibvlaxrejrvv
             try {
               // ===== SUPABASE CONFIGURATION - YOUR REAL PROJECT =====
-              // ⚠️ CRITICAL: Get your ANON KEY from Supabase Dashboard → Settings → API → anon public
-              const PROJECT_URL = 'https://nvcsefnmibvlaxrejrvv.supabase.co';  // Your project URL
-              const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52Y3NlZm5taWJ2bGF4cmVqcnZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ2NjYxMzYsImV4cCI6MjA4MDI0MjEzNn0.YyrZPk4_ldc5Ueg2hXD7qqMdFb6lJ7jkIWnLcL3CpAM';  // ← REPLACE THIS with your actual anon public key!
-              const PROJECT_ID = 'nvcsefnmibvlaxrejrvv';  // Your project ID
+              // Configuration is loaded from window.XREPLY_CONFIG (injected via config.js)
+              const { PROJECT_URL, ANON_KEY, PROJECT_ID } = window.XREPLY_CONFIG || {};
+              
+              if (!PROJECT_URL || !ANON_KEY) {
+                 console.warn('Supabase configuration missing. Analytics will not be sent.');
+                 throw new Error('Missing configuration');
+              }
+
               const ANALYTICS_ENDPOINT = `${PROJECT_URL}/functions/v1/analytics`;
               
               console.log(`📊 Sending analytics to: ${ANALYTICS_ENDPOINT}`);

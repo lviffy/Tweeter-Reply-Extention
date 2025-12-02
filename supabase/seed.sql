@@ -7,5 +7,6 @@ CREATE TABLE analytics_reply_generation (
     gpt_model VARCHAR,
     tweet_content VARCHAR,
     reply_generated VARCHAR,
-    client_version VARCHAR
+    client_version VARCHAR,
+    timestamp TIMESTAMPTZ
 );

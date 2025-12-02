@@ -1,0 +1,6 @@
+node_modules/
+.env
+.DS_Store
+supabase.txt
+src/config.js
+supabase/.temp/
