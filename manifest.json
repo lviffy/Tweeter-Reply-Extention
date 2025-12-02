@@ -18,19 +18,19 @@
       },
       "description": "Generate reply for tweets."
     },
-    "move_to_next_button": {
-      "suggested_key": {
-        "default": "Ctrl+Shift+E",
-        "mac": "Command+Shift+E"
-      },
-      "description": "(When you are on the home page) Move to the next generated reply in the Home page. After doing this shortcut, the focus will be on the reply button, so you can directly press ENTER to enter the reply window. When you are at the last generated reply it will regenerate a new batch of reply. </br> (When you are in the reply page) Move to the 'reply' button in a reply window. After doing this shortcut, the focus will be on the 'send' button, so you can directly press ENTER to reply."
-    },
     "move_to_previous_button": {
       "suggested_key": {
         "default": "Ctrl+Shift+S",
         "mac": "Command+Shift+S"
       },
       "description": "Move to the previous generated reply."
+    },
+    "move_to_next_button": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+E",
+        "mac": "Command+Shift+E"
+      },
+      "description": "(When you are on the home page) Move to the next generated reply in the Home page. After doing this shortcut, the focus will be on the reply button, so you can directly press ENTER to enter the reply window. When you are at the last generated reply it will regenerate a new batch of reply. <br> (When you are in the reply page) Move to the 'reply' button in a reply window. After doing this shortcut, the focus will be on the 'send' button, so you can directly press ENTER to reply."
     }
   },
   "permissions": [

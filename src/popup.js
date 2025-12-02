@@ -149,6 +149,7 @@ document.addEventListener('DOMContentLoaded', function () {
       
       // Show settings if API key is missing
       document.getElementById('settings-panel').style.display = 'block';
+      document.getElementById('persona-section').style.display = 'none';
       document.getElementById('settings-toggle').classList.add('active');
 
       const selectModels = document.getElementById('models-select');
@@ -182,6 +183,15 @@ document.addEventListener('DOMContentLoaded', function () {
   chrome.commands.getAll().then((commands) => {
     console.log(commands);
     const shortcutsContainer = document.getElementById("shortcut-container");
+    
+    // Define the desired order
+    const order = ['generate_reply', 'move_to_previous_button', 'move_to_next_button'];
+    
+    // Sort commands based on the defined order
+    commands.sort((a, b) => {
+      return order.indexOf(a.name) - order.indexOf(b.name);
+    });
+
     commands.forEach(shortcut => {
       if (shortcut.name == "_execute_action") {
         return;
@@ -204,13 +214,16 @@ document.addEventListener('DOMContentLoaded', function () {
   // Settings toggle
   const settingsToggle = document.getElementById('settings-toggle');
   const settingsPanel = document.getElementById('settings-panel');
+  const personaSection = document.getElementById('persona-section');
   
   settingsToggle.addEventListener('click', function() {
     settingsToggle.classList.toggle('active');
     if (settingsPanel.style.display === 'none') {
       settingsPanel.style.display = 'block';
+      personaSection.style.display = 'none';
     } else {
       settingsPanel.style.display = 'none';
+      personaSection.style.display = 'block';
     }
   });
 }); 
