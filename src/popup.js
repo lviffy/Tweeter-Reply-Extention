@@ -1,5 +1,4 @@
-function getGeminiModels(apiKey) {
-  // Gemini doesn't have a models list endpoint, so we'll return predefined models
+function getGeminiModels() {
   return Promise.resolve({
     models: [
       { name: 'gemini-2.0-flash-exp', displayName: 'Gemini 2.0 Flash (Experimental)' },
@@ -11,7 +10,36 @@ function getGeminiModels(apiKey) {
   });
 }
 
+function getOpenRouterModels() {
+  return Promise.resolve({
+    models: [
+      { name: 'google/gemini-2.0-flash-exp:free', displayName: 'Gemini 2.0 Flash (Free)' },
+      { name: 'google/gemini-exp-1206:free', displayName: 'Gemini Exp 1206 (Free)' },
+      { name: 'meta-llama/llama-3.3-70b-instruct:free', displayName: 'Llama 3.3 70B (Free)' },
+      { name: 'qwen/qwen-2.5-72b-instruct:free', displayName: 'Qwen 2.5 72B (Free)' },
+      { name: 'mistralai/mistral-7b-instruct:free', displayName: 'Mistral 7B (Free)' },
+      { name: 'huggingfaceh4/zephyr-7b-beta:free', displayName: 'Zephyr 7B (Free)' },
+      { name: 'openchat/openchat-7b:free', displayName: 'OpenChat 7B (Free)' },
+      { name: 'openai/gpt-4o-mini', displayName: 'GPT-4o Mini (Paid)' },
+      { name: 'openai/gpt-4o', displayName: 'GPT-4o (Paid)' },
+      { name: 'anthropic/claude-3.5-sonnet', displayName: 'Claude 3.5 Sonnet (Paid)' },
+      { name: 'anthropic/claude-3-haiku', displayName: 'Claude 3 Haiku (Paid)' }
+    ]
+  });
+}
+
+function getCurrentProvider() {
+  return document.getElementById('provider-select').value;
+}
+
 function validateApiKey() {
+  const provider = getCurrentProvider();
+  
+  if (provider === 'openrouter') {
+    validateOpenRouterApiKey();
+    return;
+  }
+  
   const apiKey = document.getElementById('api-key').value.trim();
   const apiKeyInput = document.getElementById('api-key');
   const validateButton = document.getElementById('validate-button');
@@ -55,10 +83,63 @@ function validateApiKey() {
   });
 }
 
-function loadAndPopulateModels() {
-    const apiKey = document.getElementById('api-key').value;
+function validateOpenRouterApiKey() {
+  const apiKey = document.getElementById('openrouter-api-key').value.trim();
+  const apiKeyInput = document.getElementById('openrouter-api-key');
+  const validateButton = document.getElementById('openrouter-validate-button');
+  const selectModels = document.getElementById('models-select');
+  const gptQueryInput = document.getElementById('gpt-query');
 
-    getGeminiModels(apiKey)
+  if (!apiKey) {
+    apiKeyInput.style.borderColor = 'red';
+    gptQueryInput.disabled = true;
+    selectModels.disabled = true;
+    validateButton.classList.add('invalid');
+    console.warn('OpenRouter API key is empty');
+    return;
+  }
+
+  // Save the key
+  chrome.storage.local.set({ 'openrouter-api-key': apiKey }).then(() => {
+    console.log("OpenRouter API key saved");
+  });
+
+  // Test the OpenRouter API key
+  fetch('https://openrouter.ai/api/v1/auth/key', {
+    headers: {
+      'Authorization': `Bearer ${apiKey}`
+    }
+  })
+  .then((response) => {
+      if (!response.ok) {
+          throw new Error('Invalid API key');
+      }
+      return response.json();
+  })
+  .then((data) => {
+      apiKeyInput.style.borderColor = 'green';
+      gptQueryInput.disabled = false;
+      selectModels.disabled = false;
+      loadAndPopulateModels();
+      validateButton.classList.remove('invalid');
+      console.log('OpenRouter API key validated successfully', data);
+  })
+  .catch((error) => {
+      console.error('Error occurred during OpenRouter API key validation:', error);
+      apiKeyInput.style.borderColor = 'red';
+      gptQueryInput.disabled = true;
+      selectModels.disabled = true;
+      validateButton.classList.add('invalid');
+  });
+}
+
+function loadAndPopulateModels() {
+    const provider = getCurrentProvider();
+    const getModels = provider === 'openrouter' ? getOpenRouterModels : getGeminiModels;
+    const storageKey = provider === 'openrouter' ? 'openrouter-model' : 'gemini-model';
+    const defaultModel = provider === 'openrouter' ? 'google/gemini-2.0-flash-exp:free' : 'gemini-2.0-flash-exp';
+
+    getModels()
         .then((response) => {
             const modelSelect = document.getElementById('models-select');
 
@@ -66,8 +147,8 @@ function loadAndPopulateModels() {
             modelSelect.innerHTML = '';
 
             // Add default option
-            chrome.storage.local.get(['gemini-model']).then((model) => {
-                const savedModel = model['gemini-model'] || 'gemini-1.5-flash';
+            chrome.storage.local.get([storageKey]).then((model) => {
+                const savedModel = model[storageKey] || defaultModel;
                 
                 // Add all models
                 response.models.forEach(modelInfo => {
@@ -87,7 +168,22 @@ function loadAndPopulateModels() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  // API key save
+  // Provider toggle
+  document.getElementById('provider-select').addEventListener('change', function () {
+    const provider = this.value;
+    chrome.storage.local.set({ 'api-provider': provider }).then(() => {
+      console.log("Provider saved:", provider);
+    });
+    
+    // Toggle visibility of config sections
+    document.getElementById('gemini-config').style.display = provider === 'gemini' ? 'block' : 'none';
+    document.getElementById('openrouter-config').style.display = provider === 'openrouter' ? 'block' : 'none';
+    
+    // Reload models for the selected provider
+    loadAndPopulateModels();
+  });
+
+  // API key save (Gemini)
   document.getElementById('api-key').addEventListener('change', function () {
     const value = document.getElementById('api-key').value.trim();
     chrome.storage.local.set({ 'gemini-api-key': value }).then(() => {
@@ -98,10 +194,23 @@ document.addEventListener('DOMContentLoaded', function () {
   
   document.getElementById('validate-button').addEventListener('click', validateApiKey);
 
+  // OpenRouter API key save
+  document.getElementById('openrouter-api-key').addEventListener('change', function () {
+    const value = document.getElementById('openrouter-api-key').value.trim();
+    chrome.storage.local.set({ 'openrouter-api-key': value }).then(() => {
+      console.log("OpenRouter API key saved");
+    });
+    validateOpenRouterApiKey();
+  });
+  
+  document.getElementById('openrouter-validate-button').addEventListener('click', validateOpenRouterApiKey);
+
   document.getElementById('models-select').addEventListener('change', function () {
     const value = document.getElementById('models-select').value;
-    chrome.storage.local.set({ 'gemini-model': value }).then(() => {
-      console.log("New Gemini model saved");
+    const provider = getCurrentProvider();
+    const storageKey = provider === 'openrouter' ? 'openrouter-model' : 'gemini-model';
+    chrome.storage.local.set({ [storageKey]: value }).then(() => {
+      console.log("Model saved:", value);
     });
   });
 
@@ -162,9 +271,33 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
+  // Load OpenRouter API key
+  chrome.storage.local.get(['openrouter-api-key']).then((result) => {
+    if (result['openrouter-api-key']) {
+      document.getElementById('openrouter-api-key').value = result['openrouter-api-key'].trim();
+    }
+  });
+
+  // Load saved provider
+  chrome.storage.local.get(['api-provider']).then((result) => {
+    const provider = result['api-provider'] || 'gemini';
+    document.getElementById('provider-select').value = provider;
+    document.getElementById('gemini-config').style.display = provider === 'gemini' ? 'block' : 'none';
+    document.getElementById('openrouter-config').style.display = provider === 'openrouter' ? 'block' : 'none';
+    
+    // If provider is openrouter and has key, validate it
+    if (provider === 'openrouter') {
+      chrome.storage.local.get(['openrouter-api-key']).then((orResult) => {
+        if (orResult['openrouter-api-key']) {
+          loadAndPopulateModels();
+        }
+      });
+    }
+  });
+
   chrome.storage.local.get(['gemini-model']).then((result) => {
     if (result['gemini-model'] == undefined) {
-      chrome.storage.local.set({ 'gemini-model': 'gemini-1.5-flash' });
+      chrome.storage.local.set({ 'gemini-model': 'gemini-2.0-flash-exp' });
     }
     // Model dropdown will be populated by loadAndPopulateModels() after API validation
   });

@@ -387,15 +387,39 @@
     <div id="settings-panel" class="section" style="display: none;">
       <h2 class="section-title">Configuration</h2>
       
-      <div class="steps">
-        <p>1. Get API Key <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a></p>
-        <p>2. Paste & Save below</p>
+      <div class="input-group">
+        <label class="label">API Provider</label>
+        <select id="provider-select">
+          <option value="gemini">Google Gemini</option>
+          <option value="openrouter">OpenRouter</option>
+        </select>
       </div>
 
-      <div class="input-group">
-        <div class="input-row">
-          <input type="password" id="api-key" placeholder="Gemini API Key">
-          <button id="validate-button" class="validate-button">Save</button>
+      <div id="gemini-config">
+        <div class="steps">
+          <p>1. Get API Key from <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a></p>
+          <p>2. Paste & Save below</p>
+        </div>
+
+        <div class="input-group">
+          <div class="input-row">
+            <input type="password" id="api-key" placeholder="Gemini API Key">
+            <button id="validate-button" class="validate-button">Save</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="openrouter-config" style="display: none;">
+        <div class="steps">
+          <p>1. Get API Key from <a href="https://openrouter.ai/keys" target="_blank">OpenRouter</a></p>
+          <p>2. Paste & Save below</p>
+        </div>
+
+        <div class="input-group">
+          <div class="input-row">
+            <input type="password" id="openrouter-api-key" placeholder="OpenRouter API Key (sk-or-...)">
+            <button id="openrouter-validate-button" class="validate-button">Save</button>
+          </div>
         </div>
       </div>
 

@@ -39,7 +39,24 @@ function hideLoadingSpinner(container) {
 function generateReply() {
     window.articles = document.querySelectorAll('[data-testid="tweet"]');
 
-    if (window.articles) {
+    if (window.articles && window.articles.length > 0) {
+        // Find the first tweet that hasn't been processed yet
+        let targetArticle = null;
+        for (let i = 0; i < window.articles.length; i++) {
+            const article = window.articles[i];
+            const tweetRef = article.querySelectorAll('[id="generated-reply"]');
+            const content = article.querySelector('[data-testid="tweet"] [data-testid="tweetText"]');
+            if (tweetRef.length === 0 && content && !isLoadingSpinnerPresent(content)) {
+                targetArticle = article;
+                break;
+            }
+        }
+
+        if (!targetArticle) {
+            console.log("No unprocessed tweets found");
+            return;
+        }
+
         const shadowRootStyles = `
           /* Add your Tailwind styles or regular CSS styles here */
           /* Example: */
@@ -106,9 +123,11 @@ function generateReply() {
         const user = document.querySelector('[data-testid="AppTabBar_Profile_Link"]');
         const userHandle = '@' + user.href.split('/')[3]
 
-        console.log(window.articles)
+        console.log("Processing single tweet");
 
-        window.articles.forEach(async article => {
+        // Process only the target article (one at a time)
+        const article = targetArticle;
+        const processArticle = async () => {
             const content = article.querySelector('[data-testid="tweet"] [data-testid="tweetText"]');
             const user = article.querySelector('[data-testid="tweet"] [data-testid="User-Name"]');
 
@@ -172,11 +191,17 @@ function generateReply() {
             div.className = 'generated-reply-container'; // Apply Tailwind classes or use custom class names
 
             const apiKey = await chrome.storage.local.get(['gemini-api-key']);
+            const openrouterApiKey = await chrome.storage.local.get(['openrouter-api-key']);
             const gptQuery = await chrome.storage.local.get(['gpt-query']);
             const model = await chrome.storage.local.get(['gemini-model']);
+            const openrouterModel = await chrome.storage.local.get(['openrouter-model']);
+            const providerSetting = await chrome.storage.local.get(['api-provider']);
+            
+            const provider = providerSetting['api-provider'] || 'gemini';
 
-            // Check if API key exists
-            if (!apiKey['gemini-api-key'] || apiKey['gemini-api-key'].trim() === '') {
+            // Check if API key exists based on provider
+            if (provider === 'gemini') {
+              if (!apiKey['gemini-api-key'] || apiKey['gemini-api-key'].trim() === '') {
                 hideLoadingSpinner(content);
                 const errorMessage = "Please configure your Gemini API key in the extension settings first.";
                 let p = document.createElement("p");
@@ -189,18 +214,110 @@ function generateReply() {
                 shadowRoot.appendChild(div);
                 content.appendChild(shadowRoot);
                 return;
+              }
+            } else if (provider === 'openrouter') {
+              if (!openrouterApiKey['openrouter-api-key'] || openrouterApiKey['openrouter-api-key'].trim() === '') {
+                hideLoadingSpinner(content);
+                const errorMessage = "Please configure your OpenRouter API key in the extension settings first.";
+                let p = document.createElement("p");
+                p.innerHTML = errorMessage;
+                p.style.marginBottom = '5px';
+                p.style.marginTop = '5px';
+                p.style.color = 'red';
+                p.style.fontWeight = 'bold';
+                div.appendChild(p);
+                shadowRoot.appendChild(div);
+                content.appendChild(shadowRoot);
+                return;
+              }
             }
 
-            const trimmedApiKey = apiKey['gemini-api-key'].trim();
-            const selectedModel = model['gemini-model'] || 'gemini-1.5-flash';
-            console.log(`Using model: ${selectedModel}`);
-
-            // Prepare the prompt for Gemini
+            // Prepare the prompt
             const systemPrompt = gptQuery['gpt-query'] || "You are a ghostwriter and reply to the user's tweets by talking directly to the person, you must keep it short, exclude hashtags.";
             const userMessage = '[username] wrote [tweet]'.replace('[username]', username).replace('[tweet]', content.innerText);
-            const fullPrompt = `${systemPrompt}\n\n${userMessage}`;
 
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${trimmedApiKey}`, {
+            let response;
+            let generatedText;
+
+            if (provider === 'openrouter') {
+              // OpenRouter API call
+              const selectedModel = openrouterModel['openrouter-model'] || 'google/gemini-2.0-flash-exp:free';
+              console.log(`Using OpenRouter model: ${selectedModel}`);
+
+              response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${openrouterApiKey['openrouter-api-key'].trim()}`,
+                  'HTTP-Referer': 'https://x.com',
+                  'X-Title': 'XReplyGPT'
+                },
+                body: JSON.stringify({
+                  model: selectedModel,
+                  messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: userMessage }
+                  ],
+                  max_tokens: 256,
+                  temperature: 1
+                })
+              });
+
+              if (!response.ok) {
+                hideLoadingSpinner(content);
+                let errorMessage = "Error while generating a reply for this tweet";
+                try {
+                    const errorData = await response.json();
+                    if (errorData.error && errorData.error.message) {
+                        errorMessage += ": " + errorData.error.message;
+                    } else {
+                        errorMessage += ": " + response.statusText;
+                    }
+                } catch (e) {
+                    errorMessage += ": " + response.statusText;
+                }
+                
+                let p = document.createElement("p");
+                p.innerHTML = errorMessage;
+                p.style.marginBottom = '5px';
+                p.style.marginTop = '5px';
+                p.style.color = 'red';
+                div.appendChild(p);
+                shadowRoot.appendChild(div);
+                content.appendChild(shadowRoot);
+                return;
+              }
+
+              const resp = await response.json();
+              console.log('OpenRouter response:', resp);
+              hideLoadingSpinner(content);
+              
+              // Check for error in response body (OpenRouter can return 200 with error)
+              if (resp.error) {
+                let p = document.createElement("p");
+                p.innerHTML = "Error: " + (resp.error.message || JSON.stringify(resp.error));
+                p.style.marginBottom = '5px';
+                p.style.marginTop = '5px';
+                p.style.color = 'red';
+                div.appendChild(p);
+                shadowRoot.appendChild(div);
+                content.appendChild(shadowRoot);
+                return;
+              }
+              
+              generatedText = resp.choices && resp.choices[0] && resp.choices[0].message 
+                  ? resp.choices[0].message.content 
+                  : "Error generating reply";
+
+            } else {
+              // Gemini API call
+              const trimmedApiKey = apiKey['gemini-api-key'].trim();
+              const selectedModel = model['gemini-model'] || 'gemini-2.0-flash-exp';
+              console.log(`Using Gemini model: ${selectedModel}`);
+
+              const fullPrompt = `${systemPrompt}\n\n${userMessage}`;
+
+              response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${trimmedApiKey}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -217,9 +334,9 @@ function generateReply() {
                         topP: 1,
                     }
                 })
-            })
+              });
 
-            if (!response.ok) {
+              if (!response.ok) {
                 hideLoadingSpinner(content);
                 let errorMessage = "Error while generating a reply for this tweet";
                 try {
@@ -256,29 +373,39 @@ function generateReply() {
                 shadowRoot.appendChild(div);
                 content.appendChild(shadowRoot);
                 return;
-            }
+              }
 
-            const resp = await response.json()
-            hideLoadingSpinner(content);
+              const resp = await response.json();
+              hideLoadingSpinner(content);
+              generatedText = resp.candidates && resp.candidates[0] && resp.candidates[0].content && resp.candidates[0].content.parts[0] 
+                  ? resp.candidates[0].content.parts[0].text 
+                  : "Error generating reply";
+            }
 
             let p = document.createElement("p");
             p.innerHTML = "Generated reply: ";
             p.style.marginBottom = '5px';
             p.style.marginTop = '5px';
+            p.style.fontWeight = 'bold';
+            p.style.color = '#71767b';
             div.appendChild(p);
 
-            // Parse Gemini response format
-            const generatedText = resp.candidates && resp.candidates[0] && resp.candidates[0].content && resp.candidates[0].content.parts[0] 
-                ? resp.candidates[0].content.parts[0].text 
-                : "Error generating reply";
-
+            console.log('Generated text:', generatedText);
+            
+            // Create a separate element for the generated text (not inside the link)
+            let replyText = document.createElement("p");
+            replyText.innerText = generatedText;
+            replyText.style.marginTop = '8px';
+            replyText.style.marginBottom = '10px';
+            replyText.style.color = '#e7e9ea';
+            replyText.style.whiteSpace = 'pre-wrap';
+            replyText.style.lineHeight = '1.4';
+            div.appendChild(replyText);
+            
             let link = document.createElement("a");
             link.id = "generated-reply";
             link.href = "https://twitter.com/intent/tweet?text=" + encodeURIComponent(generatedText) + "&in_reply_to=" + tweetId;
             link.target = "_blank";
-            link.innerHTML = generatedText;
-            link.style.marginTop = '10px';
-            link.style.color = 'rgb(0, 0, 0)';
             link.style.textDecoration = 'none';
             
             // Real Supabase cloud analytics for project nvcsefnmibvlaxrejrvv
@@ -296,6 +423,10 @@ function generateReply() {
               
               console.log(`📊 Sending analytics to: ${ANALYTICS_ENDPOINT}`);
               
+              const usedModel = provider === 'openrouter' 
+                ? (openrouterModel['openrouter-model'] || 'google/gemini-2.0-flash-exp:free')
+                : (model['gemini-model'] || 'gemini-2.0-flash-exp');
+              
               const analyticsResponse = await fetch(ANALYTICS_ENDPOINT, {
                 method: 'POST',
                 headers: {
@@ -307,7 +438,7 @@ function generateReply() {
                   user: userHandle,
                   to_user: username,
                   prompt: gptQuery['gpt-query'] || "default prompt",
-                  gpt_model: selectedModel,
+                  gpt_model: usedModel,
                   tweet_content: content.innerText.substring(0, 500),  // Limit to 500 chars
                   reply_generated: generatedText.substring(0, 280),    // Twitter limit
                   client_version: '6.2',  // Extension version
@@ -354,18 +485,19 @@ function generateReply() {
             buttonText.style.marginLeft = "10px";
             buttonReply.appendChild(buttonText);
 
-            let br = document.createElement("br");
-            link.appendChild(br);
             link.appendChild(buttonReply);
 
             div.appendChild(link);
 
             shadowRoot.appendChild(div);
             content.appendChild(shadowRoot);
-        })
+        };
+        
+        processArticle();
     }
 }
 
 window.generateReply = generateReply;
 
+// Only generate one reply when the script is triggered
 generateReply();
