@@ -179,7 +179,9 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('gemini-config').style.display = provider === 'gemini' ? 'block' : 'none';
     document.getElementById('openrouter-config').style.display = provider === 'openrouter' ? 'block' : 'none';
     
-    // Reload models for the selected provider
+    // Enable dropdown and load models for the selected provider
+    document.getElementById('models-select').disabled = false;
+    document.getElementById('gpt-query').disabled = false;
     loadAndPopulateModels();
   });
 
@@ -227,8 +229,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const isChecked = document.getElementById('show-api-key').checked;
     if (isChecked) {
       document.getElementById('api-key').setAttribute('type', 'text');
+      document.getElementById('openrouter-api-key').setAttribute('type', 'text');
     } else {
       document.getElementById('api-key').setAttribute('type', 'password');
+      document.getElementById('openrouter-api-key').setAttribute('type', 'password');
     }
   });
 
@@ -285,10 +289,13 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('gemini-config').style.display = provider === 'gemini' ? 'block' : 'none';
     document.getElementById('openrouter-config').style.display = provider === 'openrouter' ? 'block' : 'none';
     
-    // If provider is openrouter and has key, validate it
+    // If provider is openrouter and has key, validate and load models
     if (provider === 'openrouter') {
       chrome.storage.local.get(['openrouter-api-key']).then((orResult) => {
         if (orResult['openrouter-api-key']) {
+          // Enable the dropdown and load models
+          document.getElementById('models-select').disabled = false;
+          document.getElementById('gpt-query').disabled = false;
           loadAndPopulateModels();
         }
       });
